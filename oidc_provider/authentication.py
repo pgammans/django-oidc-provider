@@ -88,7 +88,7 @@ class AccessTokenAuthentication(BaseOidcAuthentication):
     def introspect_token(self, token):
         response = requests.post(
             self.oidc_config['introspection_endpoint'],
-            auth=HTTPBasicAuth(setttings.OIDC_INTERSPECT_USERNAME, setttings.OIDC_INTROSPECT_PASSWORD),
+            auth=HTTPBasicAuth(setttings.OIDC_INTROSPECT_USERNAME, setttings.OIDC_INTROSPECT_PASSWORD),
             data={'token': token.decode('ascii')})
         return response.json()
 

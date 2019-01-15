@@ -176,7 +176,7 @@ class DefaultSettings(object):
         return None
 
     @property
-    def OIDC_INTERSPECT_USERNAME(self):
+    def OIDC_INTROSPECT_USERNAME(self):
         """
         OPTIONAL. The username used for authenticating against introspect endpoint
         """

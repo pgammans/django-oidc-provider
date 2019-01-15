@@ -190,6 +190,14 @@ class DefaultSettings(object):
         """
         return True
 
+    #OIDC_SCOPE = ''
+    #OIDC_LEEWAY = 600
+    #OIDC_AUDIENCES = ( 'Cooler Moment', )
+    #OIDC_JWKS_EXPIRATION_TIME = 24*60*60
+    #OIDC_BEARER_TOKEN_EXPIRATION_TIME = 600
+    #OIDC_BEARER_AUTH_HEADER_PREFIX = 'Bearer'
+    #OIDC_ENDPOINT = 'http://127.0.0.1:8000/openid'
+
 
 default_settings = DefaultSettings()
 

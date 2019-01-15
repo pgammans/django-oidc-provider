@@ -14,7 +14,8 @@ from django.utils.translation import ugettext as _
 from django.conf import settings
 from rest_framework.authentication import BaseAuthentication, get_authorization_header
 from rest_framework.exceptions import AuthenticationFailed
-from oidc_provider.util import cache
+from oidc_provider.utils import cache
+#from oidc_provider import settings
 
 
 class AuthenticatedServiceClient:
@@ -33,7 +34,7 @@ class BaseOidcAuthentication(BaseAuthentication):
 
     @cached_property
     def oidc_config(self):
-        url = urljoin(setttings.OIDC_ENDPOINT, '.well-known/openid-configuration')
+        url = urljoin(settings.OIDC_ENDPOINT, '.well-known/openid-configuration')
         return requests.get(url).json()
 
 
@@ -59,7 +60,7 @@ class AccessTokenAuthentication(BaseOidcAuthentication):
             msg = _('Authentication Failed. Received Inactive Token')
             raise AuthenticationFailed(msg)
 
-        if setttings.OIDC_SCOPE not in token_info['scope']:
+        if settings.OIDC_SCOPE not in token_info['scope']:
             msg = _('Authentication Failed. Invalid token scope')
             raise AuthenticationFailed(msg)
 
@@ -70,7 +71,7 @@ class AccessTokenAuthentication(BaseOidcAuthentication):
 
     def get_bearer_token(self, request):
         auth = get_authorization_header(request).split()
-        auth_header_prefix = setttings.BEARER_AUTH_HEADER_PREFIX.lower()
+        auth_header_prefix = settings.OIDC_BEARER_AUTH_HEADER_PREFIX.lower()
 
         if not auth or smart_text(auth[0].lower()) != auth_header_prefix:
             return None
@@ -84,11 +85,11 @@ class AccessTokenAuthentication(BaseOidcAuthentication):
             return None
         return auth[1]
 
-    @cache(ttl=setttings.OIDC_BEARER_TOKEN_EXPIRATION_TIME)
+    @cache(ttl=settings.OIDC_BEARER_TOKEN_EXPIRATION_TIME)
     def introspect_token(self, token):
         response = requests.post(
             self.oidc_config['introspection_endpoint'],
-            auth=HTTPBasicAuth(setttings.OIDC_INTROSPECT_USERNAME, setttings.OIDC_INTROSPECT_PASSWORD),
+            auth=HTTPBasicAuth(settings.OIDC_INTROSPECT_USERNAME, settings.OIDC_INTROSPECT_PASSWORD),
             data={'token': token.decode('ascii')})
         return response.json()
 
@@ -109,7 +110,7 @@ class IDTokenAuthentication(BaseOidcAuthentication):
 
     def get_jwt_value(self, request):
         auth = get_authorization_header(request).split()
-        auth_header_prefix = setttings.BEARER_AUTH_HEADER_PREFIX.lower()
+        auth_header_prefix = settings.OIDC_BEARER_AUTH_HEADER_PREFIX.lower()
 
         if not auth or smart_text(auth[0].lower()) != auth_header_prefix:
             return None
@@ -134,7 +135,7 @@ class IDTokenAuthentication(BaseOidcAuthentication):
     def issuer(self):
         return self.oidc_config['issuer']
 
-    @cache(ttl=setttings.OIDC_JWKS_EXPIRATION_TIME)
+    @cache(ttl=settings.OIDC_JWKS_EXPIRATION_TIME)
     def decode_jwt(self, jwt_value):
         keys = self.jwks()
         try:
@@ -148,7 +149,7 @@ class IDTokenAuthentication(BaseOidcAuthentication):
         return id_token
 
     def get_audiences(self, id_token):
-        return setttings.OIDC_AUDIENCES
+        return settings.OIDC_AUDIENCES
 
     def validate_claims(self, id_token):
         if isinstance(id_token.get('aud'), six.string_types):
@@ -165,7 +166,7 @@ class IDTokenAuthentication(BaseOidcAuthentication):
             if len(id_token['aud']) > 1 and 'azp' not in id_token:
                 msg = _('Invalid Authorization header. Missing JWT authorized party.')
                 raise AuthenticationFailed(msg)
-            if 'azp' in id_token and id_token['azp'] not in setttings.OIDC_AUDIENCES:
+            if 'azp' in id_token and id_token['azp'] not in settings.OIDC_AUDIENCES:
                 msg = _('Invalid Authorization header. Invalid JWT authorized party.')
                 raise AuthenticationFailed(msg)
 
@@ -176,10 +177,10 @@ class IDTokenAuthentication(BaseOidcAuthentication):
         if 'nbf' in id_token and utc_timestamp < id_token['nbf']:
             msg = _('Invalid Authorization header. JWT not yet valid.')
             raise AuthenticationFailed(msg)
-        if 'iat' in id_token and utc_timestamp > id_token['iat'] + setttings.OIDC_LEEWAY:
+        if 'iat' in id_token and utc_timestamp > id_token['iat'] + settings.OIDC_LEEWAY:
             msg = _('Invalid Authorization header. JWT too old.')
             raise AuthenticationFailed(msg)
-        if setttings.OIDC_SCOPE not in id_token.get('scope'):
+        if settings.OIDC_SCOPE not in id_token.get('scope'):
             msg = _('Invalid Authorization header.  Invalid JWT scope.')
             raise AuthenticationFailed(msg)
 

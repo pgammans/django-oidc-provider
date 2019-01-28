@@ -15,6 +15,8 @@ from django.conf import settings
 from rest_framework.authentication import BaseAuthentication, get_authorization_header
 from rest_framework.exceptions import AuthenticationFailed
 from oidc_provider.utils import cache
+from oidc_provider.models import Token
+
 #from oidc_provider import settings
 
 
@@ -46,14 +48,29 @@ class AccessTokenAuthentication(BaseOidcAuthentication):
         if bearer_token is None:
             return None
 
-        try:
-            token_info = self.introspect_token(bearer_token)
-        except HTTPError:
-            msg = _('Invalid Authorization header. Unable to verify bearer token')
-            raise AuthenticationFailed(msg)
-        self.validate_bearer_token(token_info)
+        if settings.OIDC_ENDPOINT : #Remote oidc endpoint
+            #Fetch token from remote source
+            try:
+                token_info = self.introspect_token(bearer_token)
+            except HTTPError:
+                msg = _('Invalid Authorization header. Unable to verify bearer token')
+                raise AuthenticationFailed(msg)
+            self.validate_bearer_token(token_info)
+        else:
+            try:
+                token = Token.objects.get(access_token=bearer_token.decode('ascii'))
+            except Token.DoesNotExist:
+                msg = _('Invalid Authorization header. Unable to verify bearer token')
+                raise AuthenticationFailed(msg)
+            self.validate_local_bearer_token(token)
+            token_info = token
 
         return AuthenticatedServiceClient.create(token_info), True
+
+    def validate_local_bearer_token(self, token):
+        if  token.has_expired():
+            msg = _('Authentication Failed. Token expired')
+            raise AuthenticationFailed(msg)
 
     def validate_bearer_token(self, token_info):
         if token_info['active'] is False:

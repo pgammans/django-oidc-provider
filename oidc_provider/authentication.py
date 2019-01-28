@@ -27,7 +27,7 @@ class AuthenticatedServiceClient:
 
     @staticmethod
     def create(payload):
-        return AuthenticatedServiceClient(token)
+        return AuthenticatedServiceClient(payload)
 
 
 class BaseOidcAuthentication(BaseAuthentication):
